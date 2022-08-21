@@ -1,0 +1,64 @@
+﻿@page "/data-test"
+@using BlazorApp1.DataAccess.Dto
+@using BlazorApp1.DataAccess.AdoTool
+@using BlazorApp1.DataAccess.Models
+@using Telerik.DataSource.Extensions
+
+@if (SourceData != null)
+{
+    <TelerikGrid TItem="TBCURRENTITEMRESULTDto"
+                 Height=@Height
+                 FilterMode="@GridFilterMode.FilterRow"
+                 Sortable=true
+                 Pageable=true
+                 OnRead=@ReadItems>
+        <GridColumns>
+            <GridColumn Field=@nameof(TBCURRENTITEMRESULTDto.SAMPLEDATE) />
+            <GridColumn Field=@nameof(TBCURRENTITEMRESULTDto.INSTRUMENT) />
+            <GridColumn Field=@nameof(TBCURRENTITEMRESULTDto.ITEMCODE) />
+            <GridColumn Field=@nameof(TBCURRENTITEMRESULTDto.SAMPLENO) />
+            <GridColumn Field=@nameof(TBCURRENTITEMRESULTDto.ADDTRESULT) />
+        </GridColumns>
+    </TelerikGrid>
+}
+else
+{
+    <div class="loader-container">
+        <span class="loader-size-title">Fetching data</span>
+        <TelerikLoader Class="loader-indicator" Type="@LoaderType.ConvergingSpinner" Size="@(ThemeConstants.Loader.Size.Large)"></TelerikLoader>
+    </div>
+}
+
+@code{
+
+    public List<TBCURRENTITEMRESULTDto> SourceData { get; set; }
+    string Height = "400px";
+
+    protected override void OnInitialized()
+    {
+        SourceData = new QueryTool().QueryAll();
+    }
+
+    private void ReadItems(GridReadEventArgs args)
+    {
+        var datasourceResult = SourceData.ToDataSourceResult(args.Request);
+        args.Data = datasourceResult.Data;
+        args.Total = datasourceResult.Total;
+    }
+}
+
+<style>
+    .loader-size-title {
+        display: block;
+        margin-bottom: 10px;
+    }
+
+    .loader-container {
+        text-align: center;
+        width: 150px;
+        display: inline-table;
+        padding-top: 10px;
+        position: absolute;
+        left: 50%;
+    }
+</style>

@@ -1,0 +1,46 @@
+﻿
+<div>
+    <div>
+        <h5>患者基本信息</h5>
+        <p>姓名：Jack   性别：男   年龄：18   病历号：12345</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>申请信息</h5>
+        <p>申请科室：儿科   申请医生：Trump   申请时间：2022.8.17 10:56</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>样本信息</h5>
+        <p>样本号：1   条形码：555   样本类型：血清    采样时间：  送检时间：</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>报告信息</h5>
+        <p>报告时间：@ReportTime  报告人：</p>
+        <p>报告备注：</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>报告结果</h5>
+        <hr/>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>项目名称</th>
+                    <th>结果</th>
+                    <th>单位</th>
+                    <th>参考值</th>
+                    <th>方法学</th>
+                    <th>检测设备</th>
+                    <th>查看历史结果</th>
+                </tr>
+            </thead>
+        </table>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public string ReportTime { get; set; }
+}

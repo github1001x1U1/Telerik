@@ -1,0 +1,174 @@
+﻿@page "/"
+
+@using BlazorApp6.Component
+@using BlazorApp6.Utils
+@using BlazorApp6.DataAccess.Model
+@using System.Text
+@using BlazorApp6.DataAccess.Commons
+@inject IHttpClientFactory ClientFactory
+
+<TelerikGridLayout>
+    <GridLayoutColumns>
+        <GridLayoutColumn></GridLayoutColumn>
+        <GridLayoutColumn></GridLayoutColumn>
+    </GridLayoutColumns>
+    <GridLayoutItems>
+        <!--目录区-->
+        <GridLayoutItem Column="1">
+                <div style="width: auto;margin-top:5px">
+                    <TelerikTreeView Data="@FlatData"
+                                     SelectionMode="@SelectionMode"
+                                     @bind-ExpandedItems="@ExpandedItems"
+                                     @bind-SelectedItems="@SelectedItems">
+                        <TreeViewBindings>
+                            <TreeViewBinding ParentIdField="ParentIdValue"></TreeViewBinding>
+                        </TreeViewBindings>
+                    </TelerikTreeView>
+                </div>
+        </GridLayoutItem>
+        <!--数据展示区-->
+        <GridLayoutItem Column="2">
+                <div style="width:1300px;margin-left:20px;margin-top:5px;">
+                    @if (SelectedItems.Any())
+                    {
+                        <div class="card-container">
+                            @foreach (var item in SelectedItems)
+                            {
+                                TreeItem dateItem = item as TreeItem;
+                                if (dateItem.Level == 3)
+                                {
+                                string dateTime = null;
+                                foreach (var parentItem in dates)
+                                    if(parentItem.Value == dateItem.ParentIdValue)
+                                    {
+                                        dateTime = parentItem.Key;
+                                        break;
+                                    }
+                                string text = dateItem.Text;
+                                //根据医生嘱咐和日期赛选数据集
+                                List<Patient> PatientsSet = patients;
+                                PatientsSet.Where(p => (p.DoctorAdivce == text) && (p.ApplicationTime.ToString("yyyy-MM-dd") == dateTime));
+                                <PatientDataComponent Patients="@PatientsSet"></PatientDataComponent>
+                                }
+                            }
+                        </div>
+                    }
+                </div>
+        </GridLayoutItem>
+    </GridLayoutItems>
+</TelerikGridLayout>
+
+@code {
+    public IEnumerable<object> SelectedItems { get; set; } = new List<object>();
+
+    public TreeViewSelectionMode SelectionMode { get; set; } = TreeViewSelectionMode.Single;//单选
+
+    public IEnumerable<TreeItem> FlatData { get; set; }
+    public IEnumerable<object> ExpandedItems { get; set; }
+    public Dictionary<string, int> dates = new Dictionary<string, int>();
+
+    List<TreeItem> items = new List<TreeItem>();
+
+    public class TreeItem
+    {
+        public int Id { get; set; }
+        public string Text { get; set; }
+        public int? ParentIdValue { get; set; }
+        public bool HasChildren { get; set; }
+        public int Level { get; set; }
+    }
+
+    List<Patient> patients = new List<Patient>();
+    protected override async Task OnInitializedAsync()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "http://njyk.3322.org:8006/Api.ashx");
+        string json = "{ \"url\":\"" + "\",\"type\":\"L001GetSampleByPatientId\",\"content\":\"317536\"}";
+        request.Content = new StringContent(json, Encoding.GetEncoding("UTF-8"), "application/json");
+        var client = ClientFactory.CreateClient();
+        var response = await client.SendAsync(request);
+        var str = response.Content.ReadAsStringAsync().Result;
+        patients = WebApiTool.GetWebData(str);
+        CommonsData.patients = patients;// 装配公共数据集
+        LoadFlatData();
+        SelectedItems = FlatData.Take(0);
+    }
+
+    private void LoadFlatData()
+    {
+        items.Add(new TreeItem()
+            {
+                Id = 1,
+                Text = "根据日期分组显示",
+                ParentIdValue = null,
+                HasChildren = true,
+                Level = 1
+            });
+        //日期组
+        dates = DateGrupTool.GetDates();
+        DateGroup(dates);
+        //医生嘱咐组
+        DoctorGroup(dates);
+        FlatData = items;
+        ExpandedItems = items.Take(dates.Count + 1);//展开项数目等于日期条目数+1
+    }
+    //日期组
+    private void DateGroup(Dictionary<string, int> dates)
+    {
+        foreach (var item in dates)
+        {
+            items.Add(new TreeItem()
+                {
+                    Id = item.Value,
+                    Text = item.Key,
+                    ParentIdValue = 1,// 挂载到1结点
+                    HasChildren = true,
+                    Level = 2
+                });
+        }
+    }
+    //医生嘱咐组
+    private void DoctorGroup(Dictionary<string, int> dates)
+    {
+        foreach (var item in dates)
+        {
+            string key = item.Key;
+            int ParentId = item.Value;
+            foreach (Patient patient in patients)
+            {
+                if(key == patient.ApplicationTime.ToString("yyyy-MM-dd"))
+                {
+                    items.Add(new TreeItem()
+                        {
+                            Text = patient.DoctorAdivce,
+                            ParentIdValue = ParentId,
+                            HasChildren = false,
+                            Level = 3
+                        });
+                }
+            }
+        }
+    }
+    void UpdateSeletedItemsPerSelectionMode()
+    {
+        switch (SelectionMode)
+        {
+            case TreeViewSelectionMode.None:
+                SelectedItems = Enumerable.Empty<object>();
+                break;
+            case TreeViewSelectionMode.Single:
+                if (SelectedItems.Count() > 0)
+                {
+                    SelectedItems = new List<object> { SelectedItems.Last() };
+                }
+                break;
+            default:
+                break;
+        }
+    } 
+}
+<style>
+    .card-container {
+        display: flex;
+        flex-wrap: wrap;
+    }
+</style>

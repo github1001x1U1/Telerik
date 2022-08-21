@@ -1,0 +1,72 @@
+﻿@page "/"
+@using BlazorApp1.Data
+@using BlazorApp1.Component
+@inject WeatherForecastService ForecastService
+
+<div class="grid-layout-container">
+    <TelerikGridLayout Class="grid-layout">
+         <GridLayoutColumns>
+            <GridLayoutColumn Width="200px"></GridLayoutColumn>
+            <GridLayoutColumn Width="auto"></GridLayoutColumn>
+        </GridLayoutColumns>
+
+        <GridLayoutItems>
+            <!--目录树-->
+            <GridLayoutItem>
+               <TelerikTreeView Data="@HierarchicalData" @bind-ExpandedItems="@ExpandedItems">
+                    <TreeViewBindings>
+                        <TreeViewBinding TextField="Category" ItemsField="Products"></TreeViewBinding>
+                        <TreeViewBinding Level="1" TextField="ProductName"></TreeViewBinding>
+                    </TreeViewBindings>
+                </TelerikTreeView>
+            </GridLayoutItem>
+            <!--数据展示区-->
+            <GridLayoutItem Column="2">
+                <ShowData ReportTime="2011.7.12 10:34"></ShowData>
+            </GridLayoutItem>
+        </GridLayoutItems>
+    </TelerikGridLayout>
+</div>
+
+@code {
+    string Dt;// 占位
+    public IEnumerable<ProductCategoryItem> HierarchicalData { get; set; }
+    public IEnumerable<object> ExpandedItems { get; set; }
+
+    public class ProductCategoryItem
+    {
+        public string Category { get; set; }
+        public List<ProductItem> Products { get; set; }
+    }
+
+    public class ProductItem
+    {
+        public string ProductName { get; set; }
+    }
+
+    protected override void OnInitialized()
+    {
+        LoadHierarchical();
+    }
+
+    private void LoadHierarchical()
+    {    
+        List<ProductItem> beverages = new List<ProductItem>()
+        {
+            new ProductItem { ProductName= "血常规" },
+            new ProductItem { ProductName= "尿常规" },
+            new ProductItem { ProductName= "微生物" }
+        };
+
+        List<ProductCategoryItem> roots = new List<ProductCategoryItem>();
+
+        roots.Add(new ProductCategoryItem
+        {
+            Category = "按开单日期分组显示",
+            Products = beverages
+        });
+
+        HierarchicalData = roots;
+        ExpandedItems = roots.Take(1);
+    }
+}

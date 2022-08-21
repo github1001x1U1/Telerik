@@ -1,0 +1,42 @@
+﻿@using BlazorApp6.Utils
+@using BlazorApp6.DataAccess.Model
+@using System.Text
+@using BlazorApp6.DataAccess.Commons
+@inject IHttpClientFactory ClientFactory
+
+@foreach (Patient patient in Patients)
+{
+    <div>
+    <div>
+        <h5>患者基本信息</h5>
+        <p>姓名：@patient.Name  性别：@patient.Gender   年龄：@patient.Age   病历号：@patient.PatientNo</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>申请信息</h5>
+        <p>申请科室：@patient.ApplicationDepartment   申请医生：@patient.ApplicationDoctor   申请时间：@patient.ApplicationTime</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>样本信息</h5>
+        <p>样本号：@patient.SimpleNumber   条形码：@patient.BarCodeNumber   样本类型：@patient.SimpleType    采样时间：@patient.SimplingTime  送检时间：@patient.SubmitTime</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>报告信息</h5>
+        <p>报告时间：@patient.ReportTime  报告人：@patient.Reporter</p>
+        <p>报告备注：@patient.ReportRemarks</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>报告结果</h5>
+        <p>医生嘱咐：@patient.DoctorAdivce</p>
+    </div>
+</div>
+}
+
+
+@code {
+    [Parameter]
+    public List<Patient> Patients { get; set; }
+}

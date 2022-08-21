@@ -1,0 +1,96 @@
+﻿@page "/show-data"
+
+@using BlazorApp4.DataAccess.Model
+@using BlazorApp4.DataAccess.Service
+@using System.Text
+@using BlazorApp4.Utils
+@using System.Threading;
+
+@inject PatientService patientService
+@inject RoutineBloodTestService routineBloodTestService
+@inject IHttpClientFactory ClientFactory
+
+@foreach (Patient patient in patients)
+{
+    <div>
+    <div>
+        <h5>患者基本信息</h5>
+        <p>姓名：@patient.Name  性别：@patient.Gender   年龄：@patient.Age   病历号：@patient.PatientNo</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>申请信息</h5>
+        <p>申请科室：@patient.ApplicationDepartment   申请医生：@patient.ApplicationDoctor   申请时间：@patient.ApplicationTime</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>样本信息</h5>
+        <p>样本号：@patient.SimpleNumber   条形码：@patient.BarCodeNumber   样本类型：@patient.SimpleType    采样时间：@patient.SimplingTime  送检时间：@patient.SubmitTime</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>报告信息</h5>
+        <p>报告时间：@patient.ReportTime  报告人：@patient.Reporter</p>
+        <p>报告备注：@patient.ReportRemarks</p>
+    </div>
+    <hr/>
+    <div>
+        <h5>报告结果</h5>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>项目名称</th>
+                    <th>结果</th>
+                    <th>单位</th>
+                    <th>参考值</th>
+                    <th>方法学</th>
+                    <th>检测设备</th>
+                    <th>查看历史结果</th>
+                </tr>
+                @foreach (var item in routineBloodTests)
+                {
+                    <tr>
+                        <td>@item.ProjectName</td>
+
+                        @if(Int32.Parse(@item.Result) > 200)
+                        {
+                            <td style="color: red">@item.Result ↑</td>
+                        } else
+                        {
+                            <td>@item.Result</td>
+                        }
+
+                        <td>@item.Company</td>
+                        <td>@item.ReferenceValue</td>
+                        <td>@item.Methodology</td>
+                        <td>@item.TestingEquipment</td>
+                        <td><TelerikButton ThemeColor="@(ThemeConstants.Button.ThemeColor.Primary)">查看</TelerikButton></td>
+                    </tr>
+                }
+            </thead>
+        </table>
+    </div>
+</div>
+}
+
+
+
+@code {
+    //Patient patient = new Patient();
+    List<Patient> patients = new List<Patient>();
+    List<RoutineBloodTest> routineBloodTests = new List<RoutineBloodTest>();
+    protected override async Task OnInitializedAsync()
+    {
+        var request = new HttpRequestMessage(HttpMethod.Post, "http://njyk.3322.org:8006/Api.ashx");
+        string json = "{ \"url\":\"" + "\",\"type\":\"L001GetSampleByPatientId\",\"content\":\"317536\"}";
+        request.Content = new StringContent(json, Encoding.GetEncoding("UTF-8"), "application/json");
+        var client = ClientFactory.CreateClient();
+
+        var response = await client.SendAsync(request);
+
+        var str = response.Content.ReadAsStringAsync().Result;
+        //patient = WebApiTool.GetWebData(str).First();
+        patients = WebApiTool.GetWebData(str);
+        routineBloodTests = routineBloodTestService.GetRoutineBloodTestList();
+     }
+}

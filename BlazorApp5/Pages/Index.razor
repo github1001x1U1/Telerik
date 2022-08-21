@@ -1,0 +1,214 @@
+﻿@page "/"
+@using BlazorApp5.DataAccess.Dto
+
+<TelerikDrawer @ref="@Drawer" Data="Data" MiniMode="false" Mode="@DrawerMode.Push" TItem="DrawerItem" SelectedItemChanged="@OnItemSelect" @bind-Expanded="@Expanded">
+    <Template>
+        <div class="k-drawer-items" role="menubar" aria-orientation="vertical">
+            <ul>
+                @foreach (var item in context)
+                {
+                    var selectedClass = item == SelectedItem ? "k-selected" : string.Empty;
+                    <li @onclick="@(() => OnItemSelect(item))" class="k-drawer-item @selectedClass k-level-@(item.Level)">
+                        <TelerikIcon Icon="@item.Icon"></TelerikIcon>
+                        <span class="k-item-text">@item.Text</span>
+
+                        @if (item.Expanded && (item.Children?.Any() ?? false))
+                        {
+                            <span class="k-icon k-i-arrow-chevron-down" style="position:absolute; right:0; line-height: inherit; margin: 0 8px"></span>
+                        }
+                        else if (!item.Expanded && (item.Children?.Any() ?? false))
+                        {
+                            <span class="k-icon k-i-arrow-chevron-right" style="position:absolute; right:0; line-height: inherit; margin: 0 8px"></span>
+                        }
+                    </li>
+                }
+                
+            </ul>
+        </div>        
+    </Template>
+    <DrawerContent>
+        @SelectedItem?.Description
+    </DrawerContent>
+</TelerikDrawer>
+
+@code {
+    public TelerikDrawer<DrawerItem> Drawer { get; set; }
+    public DrawerItem SelectedItem { get; set; }
+    public bool Expanded { get; set; } = true;
+    //日期组
+    public List<string> dateGroupDtos = new DateGroupDto().GetDateGroupDtos();
+    public List<DrawerItem> dateDrawerItems = new List<DrawerItem>();
+    //医生组
+    public List<string> doctorDtos = new DoctorGroupDto().GetDoctorDtos();
+    public List<DrawerItem> doctorDrawerItems = new List<DrawerItem>();
+    public IEnumerable<DrawerItem> Data { get; set; } =
+    new List<DrawerItem>
+        {
+        /**
+         * 目录结构
+         * 根据日期分组
+         *      1.日期(去重)
+         *              2.检查项目
+         *                      3.医生姓名
+         */
+        new DrawerItem {
+                Text = "按开单日期分组显示",
+                Icon = "menu"
+                //日期组
+                /*
+                Children = new List<DrawerItem>()
+                {
+                    new DrawerItem { Text = "2022-2-12", Level = 1, Children = new List<DrawerItem>()
+                    {
+                        //检查项目
+                        new DrawerItem(){Text="血常规", Level=2, Children=new List<DrawerItem>()
+                        {
+                            //医生姓名
+                            new DrawerItem(){Text="Jack", Level=3},
+                            new DrawerItem(){Text="Mary", Level=3},
+                            new DrawerItem(){Text="Trump", Level=3}
+                        }},
+                        new DrawerItem(){Text="尿常规", Level=2},
+                        new DrawerItem(){Text="微生物", Level=2}
+                    } },
+                    new DrawerItem { Text = "2022-2-13", Level = 1, Children = new List<DrawerItem>()
+                    {
+                        //检查项目
+                        new DrawerItem(){Text="血常规", Level=2},
+                        new DrawerItem(){Text="尿常规", Level=2},
+                        new DrawerItem(){Text="微生物", Level=2}
+                    } },
+                    new DrawerItem { Text = "2022-2-14", Level = 1, Children = new List<DrawerItem>()
+                    {
+                        //检查项目
+                        new DrawerItem(){Text="血常规", Level=2},
+                        new DrawerItem(){Text="尿常规", Level=2},
+                        new DrawerItem(){Text="微生物", Level=2}
+                    } },
+                }
+                */
+            }
+         };
+
+    public async Task ToggleDrawer() => await Drawer.ToggleAsync();
+
+    protected override void OnInitialized()
+    {
+        foreach (string item in dateGroupDtos)
+        {
+            dateDrawerItems.Add(new DrawerItem()
+                {
+                    Text = item,
+                    Level = 1,
+                    Children = new List<DrawerItem>()
+                    {
+                        //检查项目
+                        new DrawerItem(){Text="血常规", Level=2},
+                        new DrawerItem(){Text="尿常规", Level=2},
+                        new DrawerItem(){Text="微生物", Level=2}
+                    }
+                });
+        }
+        foreach (string item in doctorDtos)
+        {
+            doctorDrawerItems.Add(new DrawerItem()
+                {
+                    Text = item,
+                    Level = 3
+                });
+        }
+
+        List<DrawerItem> DataN = Data.ToList<DrawerItem>();
+        foreach (DrawerItem item in DataN)
+        {
+            item.Children = dateDrawerItems;
+            List<DrawerItem> ds = item.Children.ToList<DrawerItem>();//日期项
+            foreach (DrawerItem d in ds)
+            {
+                List<DrawerItem> ts = d.Children.ToList<DrawerItem>();//检测项
+                foreach (DrawerItem t in ts)
+                {
+                    t.Children = doctorDrawerItems;
+                }
+            }
+        }
+
+
+
+
+        SelectedItem = Data.First();
+    }
+
+    public void OnItemSelect(DrawerItem selectedItem)
+    {
+        SelectedItem = selectedItem;
+
+        selectedItem.Expanded = !selectedItem.Expanded;
+        var newData = new List<DrawerItem>();
+
+        foreach (var item in Data.Where(x => x.Level <= selectedItem.Level))
+        {
+            newData.Add(item);
+            if (item == selectedItem && selectedItem.Expanded && (item.Children?.Any() ?? false))
+            {
+                foreach (var child in item.Children)
+                {
+                    newData.Add(child);
+                }
+            }
+
+            if (item != selectedItem && !(item.Children?.Contains(selectedItem) ?? false))
+            {
+                item.Expanded = false;
+            }
+        }
+
+        Data = newData;
+    }
+
+    public class DrawerItem
+    {
+        public string Text { get; set; }
+
+        public string Icon { get; set; }
+
+        public bool Expanded { get; set; }
+
+        public int Level { get; set; }
+
+        public string Description { get; set; }
+
+        public IEnumerable<DrawerItem> Children { get; set; }
+    }
+}
+
+<style>
+    #demo-runner {
+        height: 600px;
+    }
+
+    .k-drawer-content {
+        padding: 25px;
+        font-size: 18px;
+    }
+
+    .k-drawer-container {
+        position: relative;
+        width: 100%;
+        height: 95%;
+    }
+
+    .custom-toolbar {
+        width: 100%;
+        background-color: #f6f6f6;
+        line-height: 10px;
+        border-bottom: inset;
+        border-bottom-width: 1px;
+        padding: 3px 8px;
+        color: #656565;
+    }
+
+    .k-d-level {
+        display: flex;
+    }
+</style>
