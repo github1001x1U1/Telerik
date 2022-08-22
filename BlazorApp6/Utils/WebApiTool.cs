@@ -12,7 +12,7 @@ namespace BlazorApp6.Utils
             JObject j = JObject.Parse(str);
             string jst = j["content"].ToString();
             JArray r1 = JArray.Parse(jst);
-            //封装病例信息
+            //封装病人基础信息
             List<Patient> patients = new List<Patient>();
             for (int i = 0; i < r1.Count; i++)
             {
